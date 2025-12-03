@@ -7,6 +7,7 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
+  sendPasswordResetEmail,
   User,
 } from "firebase/auth";
 
@@ -39,6 +40,10 @@ export const signInWithGoogle = () => {
 
 export const logOut = () => {
   return signOut(auth);
+};
+
+export const resetPassword = (email: string) => {
+  return sendPasswordResetEmail(auth, email);
 };
 
 export { auth, onAuthStateChanged };
