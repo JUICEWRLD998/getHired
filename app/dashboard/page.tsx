@@ -1,76 +1,89 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { logOut } from "@/lib/firebase";
-import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileText, Calendar, Briefcase, TrendingUp } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const [showSpinner, setShowSpinner] = useState(true);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
+  const router = useRouter();
+  const [showSpinner, setShowSpinner] = useState(false);
 
   // Show spinner for 3 seconds on fresh login
   useEffect(() => {
     const isNewLogin = searchParams.get("welcome") === "true";
     if (isNewLogin) {
+      setShowSpinner(true);
       const timer = setTimeout(() => {
         setShowSpinner(false);
-        // Remove the query param from URL
         router.replace("/dashboard");
       }, 3000);
       return () => clearTimeout(timer);
-    } else {
-      setShowSpinner(false);
     }
   }, [searchParams, router]);
 
-  const handleLogout = async () => {
-    await logOut();
-    router.push("/login");
-  };
-
-  if (loading || showSpinner) {
+  if (showSpinner) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+      <div className="flex h-full flex-col items-center justify-center gap-4">
         <Spinner className="size-8 text-primary" />
         <p className="text-muted-foreground">Loading your dashboard...</p>
       </div>
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-bold">GetHired</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">{user.email}</span>
-            <Button variant="outline" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome to GetHired! Your job tracking dashboard will be here.
+          Welcome to GetHired! Track your job applications and land your dream job.
         </p>
-      </main>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">+0% from last month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Interviews Scheduled</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">+0 from last month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Offers Received</CardTitle>
+            <Briefcase className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">+0 from last month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Response Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0%</div>
+            <p className="text-xs text-muted-foreground">+0% from last month</p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
