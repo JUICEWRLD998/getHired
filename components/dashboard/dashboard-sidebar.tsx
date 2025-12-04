@@ -116,7 +116,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
       <div className="border-t p-3">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
+          className="w-full justify-start gap-3 text-muted-foreground hover:bg-muted hover:text-foreground"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
