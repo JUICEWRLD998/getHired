@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { signIn, signInWithGoogle } from "@/lib/firebase";
+import { getAuthErrorMessage } from "@/lib/auth-errors";
 import Link from "next/link";
 
 export function LoginForm({
@@ -32,10 +33,9 @@ export function LoginForm({
 
     try {
       await signIn(email, password);
-      router.push("/dashboard");
+      router.push("/dashboard?welcome=true");
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to sign in";
-      setError(errorMessage);
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -46,10 +46,9 @@ export function LoginForm({
     setLoading(true);
     try {
       await signInWithGoogle();
-      router.push("/dashboard");
+      router.push("/dashboard?welcome=true");
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to sign in with Google";
-      setError(errorMessage);
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { signUp, signInWithGoogle } from "@/lib/firebase";
+import { getAuthErrorMessage } from "@/lib/auth-errors";
 import Link from "next/link";
 
 export function SignupForm({
@@ -43,10 +44,9 @@ export function SignupForm({
     setLoading(true);
     try {
       await signUp(email, password);
-      router.push("/dashboard");
+      router.push("/dashboard?welcome=true");
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to create account";
-      setError(errorMessage);
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -57,10 +57,9 @@ export function SignupForm({
     setLoading(true);
     try {
       await signInWithGoogle();
-      router.push("/dashboard");
+      router.push("/dashboard?welcome=true");
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to sign up with Google";
-      setError(errorMessage);
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }

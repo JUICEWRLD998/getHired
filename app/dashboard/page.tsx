@@ -1,14 +1,17 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { logOut } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [showSpinner, setShowSpinner] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -16,15 +19,31 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
 
+  // Show spinner for 3 seconds on fresh login
+  useEffect(() => {
+    const isNewLogin = searchParams.get("welcome") === "true";
+    if (isNewLogin) {
+      const timer = setTimeout(() => {
+        setShowSpinner(false);
+        // Remove the query param from URL
+        router.replace("/dashboard");
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowSpinner(false);
+    }
+  }, [searchParams, router]);
+
   const handleLogout = async () => {
     await logOut();
     router.push("/login");
   };
 
-  if (loading) {
+  if (loading || showSpinner) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Loading...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+        <Spinner className="size-8 text-primary" />
+        <p className="text-muted-foreground">Loading your dashboard...</p>
       </div>
     );
   }
