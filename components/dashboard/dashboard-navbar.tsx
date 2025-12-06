@@ -11,10 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, Settings, LogOut } from "lucide-react"
+import { Settings, LogOut } from "lucide-react"
 import Link from "next/link"
 import { logOut } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
+
+function getGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return "Good morning"
+  if (hour < 17) return "Good afternoon"
+  return "Good evening"
+}
 
 export function DashboardNavbar() {
   const { user } = useAuth()
@@ -30,8 +37,24 @@ export function DashboardNavbar() {
     return email.substring(0, 2).toUpperCase()
   }
 
+  // Get first name from display name or email
+  const getFirstName = () => {
+    if (user?.displayName) {
+      return user.displayName.split(" ")[0]
+    }
+    if (user?.email) {
+      return user.email.split("@")[0]
+    }
+    return "there"
+  }
+
   return (
-    <div className="flex w-full items-center justify-end gap-4">
+    <div className="flex w-full items-center justify-between gap-4">
+      {/* Greeting */}
+      <h1 className="text-lg font-bold tracking-tight text-foreground">
+        {getGreeting()}, {getFirstName()}
+      </h1>
+
       {/* Profile Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
