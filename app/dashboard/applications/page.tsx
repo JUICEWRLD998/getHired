@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { 
   Plus, 
@@ -13,7 +13,9 @@ import {
   FileText,
   Building2,
   MapPin,
-  Calendar
+  Calendar,
+  ArrowUpDown,
+  Briefcase
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -46,29 +48,63 @@ import {
 import { mockApplications } from "@/lib/mock-data"
 import { statusConfig, ApplicationStatus } from "@/lib/types"
 
-function formatDate(dateString?: string) {
+// Format date as relative time (e.g., "3 days ago")
+function formatRelativeDate(dateString?: string) {
   if (!dateString) return "—"
-  return new Date(dateString).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
+  
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffTime = now.getTime() - date.getTime()
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === 0) return "Today"
+  if (diffDays === 1) return "Yesterday"
+  if (diffDays < 7) return `${diffDays} days ago`
+  if (diffDays < 14) return "1 week ago"
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
+  if (diffDays < 60) return "1 month ago"
+  return `${Math.floor(diffDays / 30)} months ago`
 }
+
+type SortOption = "date-desc" | "date-asc" | "company-asc" | "company-desc" | "title-asc"
 
 export default function ApplicationsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [sortBy, setSortBy] = useState<SortOption>("date-desc")
 
-  // Filter applications based on search and status
-  const filteredApplications = mockApplications.filter((app) => {
-    const matchesSearch =
-      app.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.company.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesStatus = statusFilter === "all" || app.status === statusFilter
+  // Filter and sort applications
+  const filteredApplications = useMemo(() => {
+    let result = mockApplications.filter((app) => {
+      const matchesSearch =
+        app.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.company.toLowerCase().includes(searchQuery.toLowerCase())
+      
+      const matchesStatus = statusFilter === "all" || app.status === statusFilter
 
-    return matchesSearch && matchesStatus
-  })
+      return matchesSearch && matchesStatus
+    })
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      switch (sortBy) {
+        case "date-desc":
+          return new Date(b.dateApplied || b.createdAt).getTime() - new Date(a.dateApplied || a.createdAt).getTime()
+        case "date-asc":
+          return new Date(a.dateApplied || a.createdAt).getTime() - new Date(b.dateApplied || b.createdAt).getTime()
+        case "company-asc":
+          return a.company.localeCompare(b.company)
+        case "company-desc":
+          return b.company.localeCompare(a.company)
+        case "title-asc":
+          return a.jobTitle.localeCompare(b.jobTitle)
+        default:
+          return 0
+      }
+    })
+
+    return result
+  }, [searchQuery, statusFilter, sortBy])
 
   return (
     <div className="space-y-6">
@@ -114,12 +150,20 @@ export default function ApplicationsPage() {
             <SelectItem value="WITHDRAWN">Withdrawn</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <ArrowUpDown className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date-desc">Date (Newest)</SelectItem>
+            <SelectItem value="date-asc">Date (Oldest)</SelectItem>
+            <SelectItem value="company-asc">Company (A-Z)</SelectItem>
+            <SelectItem value="company-desc">Company (Z-A)</SelectItem>
+            <SelectItem value="title-asc">Job Title (A-Z)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-
-      {/* Results count */}
-      <p className="text-sm text-muted-foreground">
-        Showing {filteredApplications.length} of {mockApplications.length} applications
-      </p>
 
       {/* Desktop Table View */}
       <div className="hidden md:block">
@@ -138,8 +182,24 @@ export default function ApplicationsPage() {
             <TableBody>
               {filteredApplications.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    No applications found.
+                  <TableCell colSpan={6} className="h-48">
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <Briefcase className="h-12 w-12 text-muted-foreground mb-3" />
+                      <h3 className="font-medium text-lg mb-1">No applications found</h3>
+                      <p className="text-muted-foreground text-sm mb-4">
+                        {searchQuery || statusFilter !== "all"
+                          ? "Try adjusting your search or filters"
+                          : "Start tracking your job search by adding your first application"}
+                      </p>
+                      {!searchQuery && statusFilter === "all" && (
+                        <Button asChild size="sm">
+                          <Link href="/dashboard/applications/new">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Application
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -177,7 +237,7 @@ export default function ApplicationsPage() {
                         {statusConfig[app.status as ApplicationStatus].label}
                       </Badge>
                     </TableCell>
-                    <TableCell>{formatDate(app.applicationDate)}</TableCell>
+                    <TableCell>{formatRelativeDate(app.dateApplied || app.applicationDate)}</TableCell>
                     <TableCell>
                       {app.resumeName ? (
                         <span className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -237,8 +297,22 @@ export default function ApplicationsPage() {
       <div className="grid gap-4 md:hidden">
         {filteredApplications.length === 0 ? (
           <Card>
-            <CardContent className="flex h-24 items-center justify-center">
-              <p className="text-muted-foreground">No applications found.</p>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <Briefcase className="h-12 w-12 text-muted-foreground mb-3" />
+              <h3 className="font-medium text-lg mb-1">No applications found</h3>
+              <p className="text-muted-foreground text-sm mb-4">
+                {searchQuery || statusFilter !== "all"
+                  ? "Try adjusting your search or filters"
+                  : "Start tracking your job search"}
+              </p>
+              {!searchQuery && statusFilter === "all" && (
+                <Button asChild size="sm">
+                  <Link href="/dashboard/applications/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Application
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -277,7 +351,7 @@ export default function ApplicationsPage() {
                     )}
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {formatDate(app.applicationDate)}
+                      {formatRelativeDate(app.dateApplied || app.applicationDate)}
                     </span>
                   </div>
                   <DropdownMenu>
