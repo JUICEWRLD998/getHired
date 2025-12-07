@@ -51,9 +51,9 @@ export function DashboardNavbar() {
   return (
     <div className="flex w-full items-center justify-between gap-4">
       {/* Greeting */}
-      <h1 className="text-lg font-bold tracking-tight text-foreground">
-        {getGreeting()}, {getFirstName()}
-      </h1>
+      <p className="text-lg font-semibold text-primary">
+        {getGreeting()}!
+      </p>
 
       {/* Profile Dropdown */}
       <DropdownMenu>
